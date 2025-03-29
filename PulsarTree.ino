@@ -20,7 +20,7 @@ const int outPWM = 10;
 char incomingByte = ' ';
 
 void setup() {
-  Serial.begin(9600);
+  Serial1.begin(9600);
   
   // Set all LED pins as OUTPUT
   for (int i = 0; i < sizeof(outPins) / sizeof(outPins[0]); i++) {
@@ -28,22 +28,23 @@ void setup() {
   }
   
   pinMode(outPWM, OUTPUT);
+  analogWrite(outPWM, 255);
 }
 
 void loop() {
-  analogWrite(outPWM, 255); // Ensure PWM is always at full duty cycle
-
-  if (Serial.available()) {
-    incomingByte = Serial.read();
-    Serial.print("I received: ");
-    Serial.println(incomingByte);
+  if (Serial1.available()) {
+    incomingByte = Serial1.read();
+    //Serial.print("R");
+    //Serial.println(incomingByte);
     
     if (incomingByte == '#') {
       // Read configuration message
-      String configMessage = Serial.readStringUntil('\n');
+      String configMessage = Serial1.readStringUntil('\n');
       configMessage.trim();  // Remove trailing newline characters
-      Serial.print("Config Message Received: ");
-      Serial.println(configMessage);
+      if (configMessage.startsWith("BRIGHT", 0))
+      {
+        analogWrite(outPWM, configMessage.substring(6,9).toInt());
+      }
     } 
     else if (isAlpha(incomingByte)) { 
       handleCommand(incomingByte);
@@ -61,13 +62,5 @@ void handleCommand(char cmd) {
   else if (cmd >= 'a' && cmd <= 'o') {
     index = cmd - 'a';  // Map 'a' to 0, 'b' to 1, ..., 'o' to 14
     digitalWrite(outPins[index], LOW);
-  }
-
-  if (index != -1) {
-    Serial.print("Pin ");
-    Serial.print(outPins[index]);
-    Serial.println((cmd < 'a') ? " ON" : " OFF");
-  } else {
-    Serial.println("Invalid command.");
   }
 }
